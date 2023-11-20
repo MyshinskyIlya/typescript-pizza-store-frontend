@@ -1,0 +1,121 @@
+import React, { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import qs from "qs";
+
+import { fetchPizzas } from "../../../API/pizzasFetch";
+import { useFetching } from "../../../hooks/useFetching";
+import { setFilters } from "../../../redux/slices/filterSlice";
+import {
+    fetchPizzas2,
+    setPizzasArray,
+} from "../../../redux/slices/pizzasSlice";
+import { sortPizzaBySort } from "../../../utils/sortPizzaBySort";
+
+import { Skeleton } from "./PizzaBlock/Skeleton/Skeleton";
+import { PizzaBlock } from "./PizzaBlock/PizzaBlock";
+import { NotFoundBlock } from "../../NotFoundBlock/NotFoundBlock";
+
+export const ContentItems = () => {
+    // -------------------------------------------------navigation---------------------------------------
+    const navigate = useNavigate();
+    // -------------------------------------------------states---------------------------------------
+    const [sortedPizzas, setSortedPizzas] = useState([]);
+
+    const isMounted = useRef();
+    const isSearch = useRef();
+
+    const { pizzasArray } = useSelector((state) => state.pizzas);
+    const { categoryId, sortId } = useSelector((state) => state.filter);
+    const { searchValue } = useSelector((state) => state.search);
+    const dispatch = useDispatch();
+
+    // -------------------------------------------------fetch---------------------------------------
+    const [pizzasFetching, isLoading, error] = useFetching(async () => {
+        const response = await fetchPizzas();
+        dispatch(setPizzasArray(response.data));
+
+        // Выполняем сортировку после получения данных
+        pizzaSort(response.data);
+    });
+
+    // -------------------------------------------------functions---------------------------------------
+    const pizzaSort = async (pizzasArray) => {
+        let sortedPizzas = [...pizzasArray];
+
+        if (categoryId !== 0) {
+            sortedPizzas = pizzasArray.filter(
+                (pizza) => pizza.category === categoryId
+            );
+        }
+        // Сортировка по сортам, вынесенная в отедльный файл в utils
+        setSortedPizzas(sortPizzaBySort(sortedPizzas, sortId));
+    };
+    // -------------------------------------------------useEffects---------------------------------------
+
+    useEffect(() => {
+        window.scrollTo(0, 0);
+
+        if (window.location.search) {
+            const params = qs.parse(window.location.search.substring(1));
+
+            dispatch(
+                setFilters({
+                    ...params,
+                })
+            );
+            isSearch.current = true;
+        }
+
+        // Выполняем запрос пицц при монтировании компонента
+        pizzasFetching();
+    }, []);
+
+    useEffect(() => {
+        window.scrollTo(0, 0);
+
+        if (isMounted.current) {
+            const queryString = qs.stringify({
+                categoryId,
+                sortId,
+            });
+
+            navigate(`?${queryString}`);
+        }
+
+        pizzaSort(pizzasArray);
+        isMounted.current = true;
+
+        if (!isSearch.current) {
+            pizzasFetching();
+        }
+
+        isSearch.current = false;
+    }, [sortId, categoryId, searchValue]);
+    // -------------------------------------------------variables---------------------------------------
+    const skeletons = [...new Array(8)].map((i, index) => (
+        <Skeleton key={index}></Skeleton>
+    ));
+    const pizzas = sortedPizzas
+        .filter((obj) => {
+            if (obj.title.toLowerCase().includes(searchValue.toLowerCase())) {
+                return true;
+            }
+        })
+        .map((i) => <PizzaBlock pizza={i} key={i.id} {...i}></PizzaBlock>);
+
+    return (
+        <div>
+            {error ? (
+                <NotFoundBlock error={error} />
+            ) : (
+                <React.Fragment>
+                    <h2 className="content__title">Все пиццы</h2>
+                    <div className="content__items">
+                        {isLoading ? skeletons : pizzas}
+                    </div>
+                </React.Fragment>
+            )}
+        </div>
+    );
+};

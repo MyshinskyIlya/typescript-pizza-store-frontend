@@ -1,0 +1,58 @@
+@import "../../../scss/_variables.scss";
+
+.root {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    width: 500px;
+
+    @media (max-width: 1050px) {
+        width: 100%;
+    }
+}
+.input {
+    border: 1px solid #fe5d1eac;
+    padding: 8px 50px;
+    border-radius: 30px;
+    min-width: 50px;
+    width: 500px;
+    outline: none;
+    margin: 0 15px;
+    font-style: italic;
+    font-family: "Roboto";
+    font-size: 16px;
+    transition: all 0.1s ease-in-out;
+
+    &:focus {
+        border: 2px solid #fe5d1e8b;
+    }
+
+    @media (max-width: 1296px) {
+        width: 100%;
+    }
+}
+
+.findIcon {
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    z-index: 50;
+    top: 12px;
+    left: 35px;
+}
+
+.cleanIcon {
+    position: absolute;
+    width: 32px;
+    height: 32px;
+    opacity: 0.3;
+    top: 3px;
+    right: 32px;
+    cursor: pointer;
+
+    &:hover {
+        opacity: 0.9;
+    }
+}
